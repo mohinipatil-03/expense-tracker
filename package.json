@@ -1,0 +1,26 @@
+{
+  "name": "personal-expense-tracker",
+  "version": "1.0.0",
+  "description": "Personal Expense Tracker with interactive charts, monthly reports, budget alerts, and MySQL support",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "db:setup": "node scripts/setup-db.js"
+  },
+  "keywords": [
+    "expense-tracker",
+    "budget",
+    "personal-finance",
+    "mysql",
+    "chartjs",
+    "bootstrap"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mysql2": "^3.12.0"
+  }
+}

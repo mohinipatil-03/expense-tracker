@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ButterBudget - Personal Expense Tracker & Wealth Manager</title>
+  
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap 5.3 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  
+  <!-- Custom Modern Butter Yellow Stylesheet -->
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-custom py-2">
+    <div class="container-fluid px-lg-4">
+      <a class="navbar-brand d-flex align-items-center gap-2 fw-bold fs-5" href="#">
+        <div class="brand-badge">🧈</div>
+        <span>Butter<span class="text-butter-dark">Budget</span></span>
+      </a>
+
+      <!-- Database Status Badge -->
+      <div class="d-none d-md-flex align-items-center me-auto ms-3">
+        <span id="db-status-badge" class="badge bg-warning-subtle text-dark border">
+          <i class="bi bi-arrow-repeat spin"></i> Connecting...
+        </span>
+      </div>
+
+      <!-- Right Header Actions -->
+      <div class="d-flex align-items-center gap-2">
+
+        <!-- Currency Selector Dropdown -->
+        <div class="d-flex align-items-center me-1">
+          <select id="navbar-currency-select" class="form-select form-select-sm fw-bold border-warning" 
+                  title="Change Active Currency" style="min-width: 105px;">
+            <option value="INR">🇮🇳 ₹ INR</option>
+            <option value="USD">🇺🇸 $ USD</option>
+            <option value="EUR">🇪🇺 € EUR</option>
+            <option value="GBP">🇬🇧 £ GBP</option>
+            <option value="AED">🇦🇪 AED</option>
+            <option value="JPY">🇯🇵 ¥ JPY</option>
+            <option value="CAD">🇨🇦 CA$ CAD</option>
+            <option value="AUD">🇦🇺 AU$ AUD</option>
+          </select>
+        </div>
+
+        <!-- Quick Action Buttons -->
+        <button class="btn btn-sm btn-outline-success fw-semibold d-none d-sm-inline-flex align-items-center gap-1" 
+                onclick="App.openAddTransactionModal('income')">
+          <i class="bi bi-plus-circle"></i> Income
+        </button>
+        <button class="btn btn-sm btn-danger fw-semibold d-inline-flex align-items-center gap-1" 
+                onclick="App.openAddTransactionModal('expense')">
+          <i class="bi bi-dash-circle"></i> Expense
+        </button>
+
+        <!-- Dark / Light Mode Switch -->
+        <button id="theme-toggle" class="btn btn-sm btn-light border" title="Toggle Dark/Light Mode">
+          <i id="theme-icon" class="bi bi-moon-stars-fill text-butter-dark"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <div class="container-fluid px-lg-4 py-3">
+
+    <!-- Sub-Header: Month Selector & Navigation Tabs -->
+    <div class="row align-items-center justify-content-between g-3 mb-4">
+      
+      <!-- Navigation Tabs -->
+      <div class="col-12 col-md-auto">
+        <ul class="nav nav-pills nav-pills-custom" id="mainTab" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="tab-dashboard" data-bs-toggle="pill" data-bs-target="#content-dashboard" type="button" role="tab">
+              <i class="bi bi-grid-fill me-1"></i> Dashboard
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-transactions" data-bs-toggle="pill" data-bs-target="#content-transactions" type="button" role="tab">
+              <i class="bi bi-receipt me-1"></i> Transactions
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-budgets" data-bs-toggle="pill" data-bs-target="#content-budgets" type="button" role="tab">
+              <i class="bi bi-bullseye me-1"></i> Budgets & Alerts
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-reports" data-bs-toggle="pill" data-bs-target="#content-reports" type="button" role="tab">
+              <i class="bi bi-bar-chart-line-fill me-1"></i> Reports
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-categories" data-bs-toggle="pill" data-bs-target="#content-categories" type="button" role="tab">
+              <i class="bi bi-tags-fill me-1"></i> Categories
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Month Navigation Controls -->
+      <div class="col-12 col-md-auto">
+        <div class="month-selector-bar d-flex align-items-center gap-2">
+          <button id="prev-month-btn" class="btn btn-sm btn-light border py-1 px-2" title="Previous Month">
+            <i class="bi bi-chevron-left"></i>
+          </button>
+          <div class="d-flex align-items-center gap-2 px-2">
+            <i class="bi bi-calendar3 text-warning"></i>
+            <span id="current-month-display" class="fw-bold text-nowrap">November 2026</span>
+          </div>
+          <button id="next-month-btn" class="btn btn-sm btn-light border py-1 px-2" title="Next Month">
+            <i class="bi bi-chevron-right"></i>
+          </button>
+          <button id="current-month-btn" class="btn btn-sm btn-light border ms-1 py-1 px-2 small" title="Jump to Current Month">
+            Today
+          </button>
+          <span id="loading-indicator" class="spinner-border spinner-border-sm text-warning ms-1 d-none" role="status"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Tab Content -->
+    <div class="tab-content" id="mainTabContent">
+
+      <!-- ================= 1. DASHBOARD TAB ================= -->
+      <div class="tab-pane fade show active" id="content-dashboard" role="tabpanel">
+
+        <!-- Top Metric KPI Cards -->
+        <div class="row g-3 mb-4">
+          <!-- Total Income -->
+          <div class="col-6 col-xl-3">
+            <div class="card card-metric p-3">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="text-muted small fw-bold text-uppercase">Monthly Income</span>
+                <span id="income-growth-badge" class="badge bg-success-subtle text-success">...</span>
+              </div>
+              <h3 id="metric-income" class="fw-bold mb-1">0.00</h3>
+              <div class="small text-muted">Total earnings received</div>
+              <i class="bi bi-cash-stack metric-icon-bg text-success"></i>
+            </div>
+          </div>
+
+          <!-- Total Expenses -->
+          <div class="col-6 col-xl-3">
+            <div class="card card-metric p-3">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="text-muted small fw-bold text-uppercase">Monthly Expenses</span>
+                <span id="expense-growth-badge" class="badge bg-danger-subtle text-danger">...</span>
+              </div>
+              <h3 id="metric-expense" class="fw-bold mb-1">0.00</h3>
+              <div class="small text-muted">Total outflow spent</div>
+              <i class="bi bi-credit-card-2-front metric-icon-bg text-danger"></i>
+            </div>
+          </div>
+
+          <!-- Net Savings / Balance -->
+          <div class="col-6 col-xl-3">
+            <div class="card card-metric p-3">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="text-muted small fw-bold text-uppercase">Net Savings</span>
+                <span class="badge bg-warning-subtle text-dark">Balance</span>
+              </div>
+              <h3 id="metric-balance" class="fw-bold mb-1">0.00</h3>
+              <div class="small text-muted">Income minus expenses</div>
+              <i class="bi bi-piggy-bank metric-icon-bg text-warning"></i>
+            </div>
+          </div>
+
+          <!-- Savings Rate -->
+          <div class="col-6 col-xl-3">
+            <div class="card card-metric p-3">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="text-muted small fw-bold text-uppercase">Savings Rate</span>
+                <span id="metric-savings-rate" class="fw-bold text-butter-dark">0%</span>
+              </div>
+              <div class="progress my-2" style="height: 10px;">
+                <div id="savings-rate-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+              </div>
+              <div class="small text-muted">Percent of income retained</div>
+              <i class="bi bi-graph-up-arrow metric-icon-bg text-info"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Budget Alerts Banner Container -->
+        <div id="budget-alerts-container" class="mb-4 d-none">
+          <!-- Dynamically populated by App.renderBudgetAlerts() -->
+        </div>
+
+        <!-- Charts Row 1: Income vs Expense & Category Doughnut -->
+        <div class="row g-4 mb-4">
+          <!-- 6-Month Income vs Expense Bar Chart -->
+          <div class="col-lg-8">
+            <div class="card p-3 h-100">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <h6 class="fw-bold mb-0 d-flex align-items-center gap-2">
+                  <i class="bi bi-bar-chart-fill text-warning"></i> 6-Month Cash Flow Trend
+                </h6>
+                <span class="badge bg-body-secondary text-muted">Historical Comparison</span>
+              </div>
+              <div class="chart-container-wrapper">
+                <canvas id="chart-history"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Expense by Category Doughnut Chart -->
+          <div class="col-lg-4">
+            <div class="card p-3 h-100">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <h6 class="fw-bold mb-0 d-flex align-items-center gap-2">
+                  <i class="bi bi-pie-chart-fill text-warning"></i> Spending by Category
+                </h6>
+                <span class="badge bg-body-secondary text-muted">Breakdown</span>
+              </div>
+              <div class="chart-container-doughnut">
+                <canvas id="chart-categories"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Row 2: Daily Spending Flow & Quick Recent Activity -->
+        <div class="row g-4 mb-4">
+          <!-- Daily Flow Chart -->
+          <div class="col-lg-7">
+            <div class="card p-3 h-100">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <h6 class="fw-bold mb-0 d-flex align-items-center gap-2">
+                  <i class="bi bi-activity text-danger"></i> Daily Spending Progression
+                </h6>
+                <span class="badge bg-body-secondary text-muted">Current Month</span>
+              </div>
+              <div class="chart-container-wrapper">
+                <canvas id="chart-daily-trend"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Transactions Preview -->
+          <div class="col-lg-5">
+            <div class="card h-100">
+              <div class="card-header bg-transparent d-flex align-items-center justify-content-between py-3 border-bottom">
+                <h6 class="fw-bold mb-0 d-flex align-items-center gap-2">
+                  <i class="bi bi-clock-history text-warning"></i> Recent Transactions
+                </h6>
+                <button class="btn btn-sm btn-link p-0 text-decoration-none text-butter-dark fw-semibold" onclick="document.getElementById('tab-transactions').click()">
+                  View All &rarr;
+                </button>
+              </div>
+              <div class="card-body p-0" id="recent-transactions-list">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ================= 2. TRANSACTIONS TAB ================= -->
+      <div class="tab-pane fade" id="content-transactions" role="tabpanel">
+        <div class="card">
+          <!-- Toolbar & Filters -->
+          <div class="card-header bg-transparent py-3 border-bottom">
+            <div class="row g-2 align-items-center justify-content-between">
+              
+              <!-- Search & Filters -->
+              <div class="col-12 col-md-8 d-flex flex-wrap gap-2">
+                <div class="input-group" style="max-width: 250px;">
+                  <span class="input-group-text bg-transparent"><i class="bi bi-search"></i></span>
+                  <input type="text" id="search-input" class="form-control" placeholder="Search transactions...">
+                </div>
+
+                <select id="filter-type" class="form-select" style="max-width: 140px;">
+                  <option value="all">All Types</option>
+                  <option value="income">Income</option>
+                  <option value="expense">Expense</option>
+                </select>
+
+                <select id="filter-category" class="form-select" style="max-width: 180px;">
+                  <option value="all">All Categories</option>
+                </select>
+              </div>
+
+              <!-- Action buttons -->
+              <div class="col-12 col-md-4 d-flex justify-content-md-end gap-2">
+                <button class="btn btn-outline-secondary btn-sm" onclick="App.exportData('csv')">
+                  <i class="bi bi-file-earmark-spreadsheet me-1"></i> CSV
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="App.exportData('json')">
+                  <i class="bi bi-file-code me-1"></i> JSON
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="App.openAddTransactionModal('expense')">
+                  <i class="bi bi-plus-lg me-1"></i> Add Transaction
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="table-responsive">
+            <table class="table table-custom align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Category</th>
+                  <th>Description</th>
+                  <th>Payment Method</th>
+                  <th class="text-end">Amount</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="transactions-table-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Footer Count -->
+          <div class="card-footer bg-transparent py-2 d-flex justify-content-between align-items-center">
+            <span id="transaction-count" class="small text-muted">0 transactions</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= 3. BUDGETS & ALERTS TAB ================= -->
+      <div class="tab-pane fade" id="content-budgets" role="tabpanel">
+        
+        <!-- Header Banner -->
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+          <div>
+            <h4 class="fw-bold mb-1">Budget Limits & Guardrails</h4>
+            <p class="text-muted small mb-0">Set spending ceilings for each category for <strong id="budget-month-title">Current Month</strong>.</p>
+          </div>
+          <button class="btn btn-primary" onclick="App.openBudgetModal()">
+            <i class="bi bi-plus-circle me-1"></i> Set Category Budget
+          </button>
+        </div>
+
+        <!-- Budget Visual Comparison Chart -->
+        <div class="card p-3 mb-4">
+          <h6 class="fw-bold mb-3 d-flex align-items-center gap-2">
+            <i class="bi bi-sliders text-warning"></i> Budget Limit vs Actual Spending Overview
+          </h6>
+          <div class="chart-container-wrapper" style="height: 250px;">
+            <canvas id="chart-budgets-bar"></canvas>
+          </div>
+        </div>
+
+        <!-- Budgets Cards Grid -->
+        <div class="row g-3" id="budgets-grid">
+          <!-- Dynamically populated -->
+        </div>
+
+      </div>
+
+      <!-- ================= 4. REPORTS & ANALYTICS TAB ================= -->
+      <div class="tab-pane fade" id="content-reports" role="tabpanel">
+        
+        <!-- Report Header -->
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+          <div>
+            <h4 class="fw-bold mb-1">Monthly Financial Report</h4>
+            <p class="text-muted small mb-0">Detailed financial summary and category distribution for <strong id="report-month-title">Current Month</strong>.</p>
+          </div>
+          <button class="btn btn-outline-secondary" onclick="App.printReport()">
+            <i class="bi bi-printer me-1"></i> Print / Save PDF
+          </button>
+        </div>
+
+        <!-- Category Breakdown Table -->
+        <div class="card mb-4">
+          <div class="card-header bg-transparent py-3">
+            <h6 class="fw-bold mb-0"><i class="bi bi-pie-chart me-2 text-warning"></i>Category-Wise Spending Breakdown</h6>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-custom align-middle mb-0">
+              <thead>
+                <tr>
+                  <th style="width: 50px;">#</th>
+                  <th>Category</th>
+                  <th>Total Spent</th>
+                  <th>Share of Total Expenses</th>
+                </tr>
+              </thead>
+              <tbody id="report-category-breakdown">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ================= 5. CATEGORIES TAB ================= -->
+      <div class="tab-pane fade" id="content-categories" role="tabpanel">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h4 class="fw-bold mb-1">Manage Categories</h4>
+            <p class="text-muted small mb-0">Customize income sources and expense categories.</p>
+          </div>
+          <button class="btn btn-primary" onclick="App.openAddCategoryModal()">
+            <i class="bi bi-plus-circle me-1"></i> Add Custom Category
+          </button>
+        </div>
+
+        <div class="row g-4">
+          <!-- Income Categories -->
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header bg-transparent py-3 d-flex align-items-center gap-2 text-success fw-bold">
+                <i class="bi bi-arrow-down-left-circle-fill"></i> Income Categories
+              </div>
+              <div class="card-body p-0" id="income-categories-list">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Expense Categories -->
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header bg-transparent py-3 d-flex align-items-center gap-2 text-danger fw-bold">
+                <i class="bi bi-arrow-up-right-circle-fill"></i> Expense Categories
+              </div>
+              <div class="card-body p-0" id="expense-categories-list">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Floating Add Transaction Button for quick access -->
+  <button class="fab-add d-md-none" onclick="App.openAddTransactionModal('expense')" title="Add Transaction">
+    <i class="bi bi-plus-lg"></i>
+  </button>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- 0. Welcome & Currency Selection Modal (Asks first!) -->
+  <div class="modal fade" id="currencyModal" tabindex="-1" aria-labelledby="currencyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-warning-subtle border-warning-subtle">
+          <div class="d-flex align-items-center gap-2">
+            <span class="fs-3">🧈</span>
+            <div>
+              <h5 class="modal-title fw-bold mb-0 text-butter-dark" id="currencyModalLabel">Welcome to ButterBudget!</h5>
+              <div class="small text-muted">Select your preferred currency to get started:</div>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="row g-3">
+            <!-- Rupee (INR) -->
+            <div class="col-6 col-md-3">
+              <div class="currency-card-option text-center" data-code="INR" onclick="App.setCurrency('INR')">
+                <div class="fs-1">🇮🇳</div>
+                <div class="fw-bold fs-4 text-butter-dark mt-1">₹ INR</div>
+                <div class="small text-muted">Indian Rupee</div>
+              </div>
+            </div>
+            <!-- Dollar (USD) -->
+            <div class="col-6 col-md-3">
+              <div class="currency-card-option text-center" data-code="USD" onclick="App.setCurrency('USD')">
+                <div class="fs-1">🇺🇸</div>
+                <div class="fw-bold fs-4 text-butter-dark mt-1">$ USD</div>
+                <div class="small text-muted">US Dollar</div>
+              </div>
+            </div>
+            <!-- Euro (EUR) -->
+            <div class="col-6 col-md-3">
+              <div class="currency-card-option text-center" data-code="EUR" onclick="App.setCurrency('EUR')">
+                <div class="fs-1">🇪🇺</div>
+                <div class="fw-bold fs-4 text-butter-dark mt-1">€ EUR</div>
+                <div class="small text-muted">Euro</div>
+              </div>
+            </div>
+            <!-- Pound (GBP) -->
+            <div class="col-6 col-md-3">
+              <div class="currency-card-option text-center" data-code="GBP" onclick="App.setCurrency('GBP')">
+                <div class="fs-1">🇬🇧</div>
+                <div class="fw-bold fs-4 text-butter-dark mt-1">£ GBP</div>
+                <div class="small text-muted">British Pound</div>
+              </div>
+            </div>
+            <!-- UAE Dirham (AED) -->
+            <div class="col-6 col-md-3">
+              <div class="currency-card-option text-center" data-code="AED" onclick="App.setCurrency('AED')">
+                <div class="fs-1">🇦🇪</div>
+                <div class="fw-bold fs-4 text-butter-dark mt-1">AED</div>
+                <div class="small text-muted">UAE Dirham</div>
+              </div>
+            </div>
+            <!-- Yen (JPY) -->
+            <div class="col-6 col-md-3">
+              <div class="currency-card-option text-center" data-code="JPY" onclick="App.setCurrency('JPY')">
+                <div class="fs-1">🇯🇵</div>
+                <div class="fw-bold fs-4 text-butter-dark mt-1">¥ JPY</div>
+                <div class="small text-muted">Japanese Yen</div>
+              </div>
+            </div>
+            <!-- Canadian Dollar (CAD) -->
+            <div class="col-6 col-md-3">
+              <div class="currency-card-option text-center" data-code="CAD" onclick="App.setCurrency('CAD')">
+                <div class="fs-1">🇨🇦</div>
+                <div class="fw-bold fs-4 text-butter-dark mt-1">CA$ CAD</div>
+                <div class="small text-muted">Canadian Dollar</div>
+              </div>
+            </div>
+            <!-- Australian Dollar (AUD) -->
+            <div class="col-6 col-md-3">
+              <div class="currency-card-option text-center" data-code="AUD" onclick="App.setCurrency('AUD')">
+                <div class="fs-1">🇦🇺</div>
+                <div class="fw-bold fs-4 text-butter-dark mt-1">AU$ AUD</div>
+                <div class="small text-muted">Australian Dollar</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer bg-light justify-content-between">
+          <span class="small text-muted">You can also change your currency anytime from the top bar.</span>
+          <button type="button" class="btn btn-primary px-4 fw-bold" data-bs-dismiss="modal">
+            Continue to Dashboard &rarr;
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1. Add / Edit Transaction Modal -->
+  <div class="modal fade" id="transactionModal" tabindex="-1" aria-labelledby="txModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="txModalLabel">Add Transaction</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="tx-form" onsubmit="event.preventDefault(); App.saveTransaction();">
+            <!-- Type Switcher -->
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-muted">Transaction Type</label>
+              <div class="btn-group w-100" role="group">
+                <input type="radio" class="btn-check" name="tx-type" id="tx-type-expense" value="expense" checked>
+                <label class="btn btn-outline-danger fw-semibold" for="tx-type-expense">
+                  <i class="bi bi-dash-circle me-1"></i> Expense
+                </label>
+                <input type="radio" class="btn-check" name="tx-type" id="tx-type-income" value="income">
+                <label class="btn btn-outline-success fw-semibold" for="tx-type-income">
+                  <i class="bi bi-plus-circle me-1"></i> Income
+                </label>
+              </div>
+            </div>
+
+            <!-- Amount -->
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-muted">Amount (<span class="currency-symbol-label">₹</span>)</label>
+              <div class="input-group">
+                <span class="input-group-text currency-symbol-label bg-warning-subtle fw-bold">₹</span>
+                <input type="number" step="0.01" min="0.01" id="tx-amount" class="form-control form-control-lg fw-bold" placeholder="0.00" required>
+              </div>
+            </div>
+
+            <!-- Category -->
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-muted">Category</label>
+              <select id="tx-category" class="form-select" required></select>
+            </div>
+
+            <!-- Date & Payment Method -->
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label small fw-bold text-muted">Date</label>
+                <input type="date" id="tx-date" class="form-control" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-bold text-muted">Payment Method</label>
+                <select id="tx-payment-method" class="form-select">
+                  <option value="UPI / Mobile">UPI / Mobile</option>
+                  <option value="Credit Card">Credit Card</option>
+                  <option value="Debit Card">Debit Card</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Net Banking">Net Banking</option>
+                  <option value="PayPal">PayPal</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-muted">Description / Notes</label>
+              <input type="text" id="tx-description" class="form-control" placeholder="e.g. Grocery shopping, Client invoice, Dinner...">
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+              <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary fw-semibold px-4">Save Transaction</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Set Budget Modal -->
+  <div class="modal fade" id="budgetModal" tabindex="-1" aria-labelledby="budgetModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="budgetModalLabel">Set Category Budget Limit</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="budget-form" onsubmit="event.preventDefault(); App.saveBudget();">
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-muted">Expense Category</label>
+              <select id="budget-category" class="form-select" required></select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-muted">Monthly Spending Limit (<span class="currency-symbol-label">₹</span>)</label>
+              <div class="input-group">
+                <span class="input-group-text currency-symbol-label bg-warning-subtle fw-bold">₹</span>
+                <input type="number" step="1" min="0" id="budget-amount" class="form-control form-control-lg fw-bold" placeholder="5000" required>
+              </div>
+              <div class="form-text">You will be alerted when spending in this category exceeds 80% or 100%.</div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+              <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary fw-semibold px-4">Save Budget</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Add Custom Category Modal -->
+  <div class="modal fade" id="categoryModal" tabindex="-1" aria-labelledby="categoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="categoryModalLabel">Create Custom Category</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="cat-form" onsubmit="event.preventDefault(); App.saveCategory();">
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-muted">Category Type</label>
+              <select id="cat-type" class="form-select" required>
+                <option value="expense">Expense Category</option>
+                <option value="income">Income Category</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-muted">Category Name</label>
+              <input type="text" id="cat-name" class="form-control" placeholder="e.g. Pet Care, Subscriptions..." required>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label small fw-bold text-muted">Color</label>
+                <input type="color" id="cat-color" class="form-control form-control-color w-100" value="#facc15">
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-bold text-muted">Icon</label>
+                <select id="cat-icon" class="form-select">
+                  <option value="bi-tag">Tag</option>
+                  <option value="bi-cart">Cart</option>
+                  <option value="bi-house">House</option>
+                  <option value="bi-car-front">Car</option>
+                  <option value="bi-cup-hot">Coffee / Food</option>
+                  <option value="bi-film">Entertainment</option>
+                  <option value="bi-heart-pulse">Health</option>
+                  <option value="bi-book">Education</option>
+                  <option value="bi-airplane">Travel</option>
+                  <option value="bi-stars">Sparkle</option>
+                  <option value="bi-cash">Cash</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+              <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary fw-semibold px-4">Create Category</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1090;">
+    <div id="app-toast" class="toast align-items-center text-bg-warning border-0" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body fw-bold text-dark" id="app-toast-body">Action successful!</div>
+        <button type="button" class="btn-close btn-close-dark me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5.3 JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Chart.js 4.4 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+  <!-- Application JS Modules -->
+  <script src="/js/api.js"></script>
+  <script src="/js/charts.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
